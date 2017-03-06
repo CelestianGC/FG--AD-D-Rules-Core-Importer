@@ -13,14 +13,17 @@ To import the xml file into FG...
 
 * Create a new campaign. 
 * Start the campaign. Once loaded type /save, then close FG.
-* Open the create xml file (in the example above, phb.xml)
-  -Select ALL the text in the XML file and "copy"
-  -close file
+
+* Open the created xml file created by corebook-html.pl (in the example above, phb.xml)
+* Select ALL the text in the XML file and "copy"
+* close file
+
 * Open up the db.xml file in the newly created campaign's directory
-  -below the "</calendar>" paste the text from phb.xml
-  -save the db.xml and close file.
+* below the "</calendar>" paste the text from phb.xml
+* save the db.xml and close file.
+
 * Start the campaign again and look in your "Story" selection.
-  -I export that into a module (/export and select Story) and then use the module in other campaigns. Keep this one for just updating the module.  
+* I export that into a module (/export and select Story) and then use the module in other campaigns. Keep this one for just updating the module.  
  
 More documentation to follow.
 
