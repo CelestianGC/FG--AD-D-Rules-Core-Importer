@@ -38,13 +38,14 @@ To import the xml file into FG...
 * Start the campaign again and look in your "Story" selection.
 * I export that into a module (/export and select Story) and then use the module in other campaigns. Keep this one for just updating the module.  
 
-HTML files for the DMG will also cause the outfilename_items.xml to be created. These are magic items it found.
+HTML files for the DMG will also cause the *_items.xml to be created. These are magic items it found.
 
-HTML files for the PHB will also cause the outfilename_skills.xml to be created. These are skills the script found.
+HTML files for the PHB will also cause the *_skills.xml to be created. These are skills the script found.
 
 More documentation to follow.
 
 === NOTES ===
+
 This tool doesn't work with all of the files (some, for whatever reason have different formats. Like \<TITLE\>SectionOfBook (Player's Handbook)\</TITLE\> will look like \<TITLE\>SectionOfBook (Player's Handbook\</TITLE\>, notice the missing ) at the end of Handbook. There are also some incorrect entries in the html files for paragraphs, tables, fonts/etc. HTML::Tidy cleans most of that up but you might have issues on some files.  Just watch for "Discarding file" in the output of the script to see which ones it couldn't figure out.
 
 Note that most of the "Discarding" messages you see when importing the PHB and TM will be the spells. I excluded those since my spell import script already has them in a spell format you can use. 
