@@ -15,25 +15,17 @@ use HTML::Tidy;
 
 my %mytree = {};
 my %myskills = {};
+my %myitems = {};
 my ($filepath,$outputfile) =  @ARGV; ## command line HTML PATH (without trailing slash) and outputfilename.xml
 my ($outputfile_skills) = $outputfile."_skills";
+my ($outputfile_items) = $outputfile."_items";
 my $skipped_file = 0;
 my $counter = 1;
 my $counter_html = 0;
 my $skills_count = 0;
+my $item_count = 0;
 my $simple = XML::Simple->new( );             # initialize the object
-my $output = IO::File->new("> $outputfile.xml");  # xml output file
-my $output_skills = IO::File->new("> $outputfile_skills.xml");  # xml output file
-my $wr = new XML::Writer( OUTPUT => $output, 
-                            DATA_MODE => 'true', 
-                            DATA_INDENT => 2, 
-                            UNSAFE => 'true' );
                             
-my $wr_skills = new XML::Writer( OUTPUT => $output_skills, 
-                            DATA_MODE => 'true', 
-                            DATA_INDENT => 2, 
-                            UNSAFE => 'true' );
-
 MAIN: {
     process_files();
     
@@ -43,6 +35,10 @@ MAIN: {
     if ($skills_count > 0) {
         print "\nCreating $skills_count in $outputfile_skills also.\n";
         &as_xml_skills();
+    }
+    if ($item_count > 0) {
+        print "\nCreating $item_count in $outputfile_items also.\n";
+        &as_xml_items();
     }
 
     print "\nDone.\n";    
@@ -153,7 +149,24 @@ sub process_files {
                     $myskills{'NonweaponProf'}{$name_skill}->{'description'}=$description;
                     $skills_count++;
                     print ("SKILL:Found $name_skill.\n");
-                }
+                } ## if nonweapon prof
+                
+                #Fire Breath-- Potion
+                #Beaker of Plentiful Potions-- Magical Item
+                #Protection from Petrification-- Scroll
+                #Scimitar of Speed-- Magical Weapon
+                if ($name =~ /(.*)(--) ((Potion)|(Magical Item)|(Scroll)|(Magical Weapon))/i) {
+                    #Full match	0-21	`#Fire Breath-- Potion`
+                    #Group 1.	0-12	`#Fire Breath`
+                    #Group 2.	12-14	`--`
+                    #Group 3.	15-21	`Potion`
+                    #Group 4.	15-21	`Potion`                
+                    my($name_item) = "$3, $1";
+                    $name_item =~ s/--/,/g;
+                    $myitems{'ItemMagicOrOtherwise'}{$name_item}->{'description'}=$description;
+                    $item_count++;
+                    print ("ITEM:Found $name_item.\n");
+                }## end potions/scrolls/etc
             } else {
                 print "\n*** *** Discarding file $filepath/$filename, did not find title. *** ***\n";
                 $skipped_file++;
@@ -354,6 +367,11 @@ sub cleanup_Description {
 
 # $mytree{$class}{$name}->{'description'}=$description;
 sub as_xml {
+    my $output = IO::File->new("> $outputfile.xml");  # xml output file
+    my $wr = new XML::Writer( OUTPUT => $output, 
+                            DATA_MODE => 'true', 
+                            DATA_INDENT => 2, 
+                            UNSAFE => 'true' );
     my $this_id = 0;
  
     $wr->startTag('encounter');
@@ -399,6 +417,11 @@ sub as_xml {
 
 ## write skills if they existed in the book?
 sub as_xml_skills {
+    my $output_skills = IO::File->new("> $outputfile_skills.xml");  # xml output file
+    my $wr_skills = new XML::Writer( OUTPUT => $output_skills, 
+                            DATA_MODE => 'true', 
+                            DATA_INDENT => 2, 
+                            UNSAFE => 'true' );
 
  my $this_id = 0;
  
@@ -443,5 +466,55 @@ sub as_xml_skills {
  
 } # enx as_xml 
 
+## write skills if they existed in the book?
+sub as_xml_items {
+my $output_items = IO::File->new("> $outputfile_items.xml");  # xml output file
+my $wr_items = new XML::Writer( OUTPUT => $output_items, 
+                            DATA_MODE => 'true', 
+                            DATA_INDENT => 2, 
+                            UNSAFE => 'true' );
+
+ my $this_id = 0;
+ 
+ $wr_items->startTag('item');
+ foreach my $this_source (keys %myitems) {
+ 
+    foreach my $this_name (keys %{ $myitems{$this_source} })
+    {
+  
+        if ($this_name) { 
+            $this_id++;
+            my $this_id_string = sprintf("id-%05d", ($this_id+100));
+            $wr_items->startTag( $this_id_string );
+
+            print " Importing Item Name: $this_source: $this_name.\n";
+
+            ##<name type="string">NameTEXT</name>
+            $wr_items->startTag('name', type => "string" );
+            $wr_items->raw( my_Escape($this_name) );
+            $wr_items->endTag('name');
+
+
+            ##<description type="formattedtext">FormatedText</description>
+            $wr_items->startTag('description', type => "formattedtext" );
+            my $desc_1 =  $myitems{$this_source}{$this_name}->{'description'};
+            $desc_1 = cleanup_Description($desc_1);
+            $desc_1 =~ s/Table of Contents//g;
+            # $wr_items->raw( $desc_1 );
+            $wr_items->raw( find_OutOfPlaceMarkup($desc_1) );
+            $wr_items->endTag('description');
+
+            ## done with entry
+        $wr_items->endTag( $this_id_string );
+        } ## end valid name
+    } ## end foreach
+ } ## end foreach sp_class
+ $wr_items->endTag( 'item' );
+ $wr_items->end();
+ $output_items->close();        
+
+ print "\nTotal Items imported:\t$this_id.\n";
+ 
+} # done with items
 
 
