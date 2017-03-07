@@ -143,13 +143,16 @@ sub process_files {
             if ($foundtitle == 1) {
                 $mytree{$source}{$name}->{'description'}=$description;
                 #Agriculture-- Nonweapon Proficiency
-                if ($name =~ /([\w ]+)([\-]+) (Nonweapon Proficiency)/i) {
+                if ($name =~ /(.*)(--) (Nonweapon Proficiency)/i) {
                     #Full match	0-35	`Agriculture-- Nonweapon Proficiency`
                     #Group 1.	0-11	`Agriculture`
                     #Group 2.	11-13	`--`
                     #Group 3.	13-35	` Nonweapon Proficiency`
-                    $myskills{'NonweaponProf'}{$1}->{'description'}=$description;
+                    my($name_skill) = $1;
+                    $name_skill =~ s/--/,/g;
+                    $myskills{'NonweaponProf'}{$name_skill}->{'description'}=$description;
                     $skills_count++;
+                    print ("SKILL:Found $name_skill.\n");
                 }
             } else {
                 print "\n*** *** Discarding file $filepath/$filename, did not find title. *** ***\n";
