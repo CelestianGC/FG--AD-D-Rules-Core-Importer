@@ -15,10 +15,10 @@ To use this script you'll need at least a basic understanding of perl and perl m
 
 Once you have the modules installed, you can run it:
 
-./corebook-html.pl path/to/html/files path/to/output/xml/file
+./corebook-html.pl path/to/html/files path/to/outfilename
 
 Example
-./corebook-html.pl core/PHB phb.xml
+./corebook-html.pl core/PHB phb
 
 This would take the PHB entries and convert them to a XML file that you can then copy/paste into a campaign db.xml file. 
 
@@ -37,7 +37,11 @@ To import the xml file into FG...
 
 * Start the campaign again and look in your "Story" selection.
 * I export that into a module (/export and select Story) and then use the module in other campaigns. Keep this one for just updating the module.  
- 
+
+HTML files for the DMG will also cause the outfilename_items.xml to be created. These are magic items it found.
+
+HTML files for the PHB will also cause the outfilename_skills.xml to be created. These are skills the script found.
+
 More documentation to follow.
 
 === NOTES ===
