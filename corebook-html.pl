@@ -72,26 +72,28 @@ my $counter_html = 0;
             $row =~ s/\<th [^>]+?\>/<td>/gi;
             $row =~ s/\<tr [^>]+?\>/<tr>/gi;
             $row =~ s/\<\(/</gi;
-            # big hammer, tired of fucking with it
-            $row =~ s/\<h2>/<b>/gi;
-            $row =~ s/\<\/h2>/<\/b>/gi;
+            # # big hammer, tired of messing with it
+            # $row =~ s/\<h2>/<b>/gi;
+            # $row =~ s/\<\/h2>/<\/b>/gi;
+            ## replace headers with bold and new lines
+            $row =~ s/\<h\d>([^<]+)<\/h\d>/<p><b>$1<\/b><\/p>/gi;
 
-            $row =~ s/\\xD7/x/gi;
-            $row =~ s/\\xBC/1\/2/gi;
-            $row =~ s/\\xBD/1\/2/gi;
-            $row =~ s/\\x88/'/gi;
-            $row =~ s/\\x9C/'/gi;
-            $row =~ s/\\xFB/u/gi;
-            $row =~ s/\\x88/'/gi;
-            $row =~ s/\\x91/'/gi;
-            $row =~ s/\\x92/'/gi;
-            $row =~ s/\\x93/'/gi;
-            $row =~ s/\\x94/'/gi;
-            $row =~ s/\\x95//gi;
-            $row =~ s/\\x96//gi;
-            $row =~ s/\\x97//gi;
-            $row =~ s/\\xD7/x/gi;
-            $row =~ s/\\x..//gi;
+            # $row =~ s/\\xD7/x/gi;
+            # $row =~ s/\\xBC/1\/2/gi;
+            # $row =~ s/\\xBD/1\/2/gi;
+            # $row =~ s/\\x88/'/gi;
+            # $row =~ s/\\x9C/'/gi;
+            # $row =~ s/\\xFB/u/gi;
+            # $row =~ s/\\x88/'/gi;
+            # $row =~ s/\\x91/'/gi;
+            # $row =~ s/\\x92/'/gi;
+            # $row =~ s/\\x93/'/gi;
+            # $row =~ s/\\x94/'/gi;
+            # $row =~ s/\\x95//gi;
+            # $row =~ s/\\x96//gi;
+            # $row =~ s/\\x97//gi;
+            # $row =~ s/\\xD7/x/gi;
+            # $row =~ s/\\x..//gi;
 
             push (@desc, $row);
         } ## end of file while
@@ -227,33 +229,33 @@ my $wr = new XML::Writer( OUTPUT => $output, DATA_MODE => 'true', DATA_INDENT =>
 	# big hammer, tired of fucking with it
 	$desc_1 =~ s/\<h2>/<b>/ig;
 
-	$desc_1 =~ s/<\/html>//ig; # FG seems case sensitive on these
-	$desc_1 =~ s/<\/body>//ig; # FG seems case sensitive on these
+	$desc_1 =~ s/<\/html>//ig;
+	$desc_1 =~ s/<\/body>//ig; 
 
-	$desc_1 =~ s/<TR>/<tr>/gi; # FG seems case sensitive on these
-	$desc_1 =~ s/<\/TR>/<\/tr>/gi; # FG seems case sensitive on these
-	$desc_1 =~ s/<TD>/<td>/gi; # FG seems case sensitive on these
-	$desc_1 =~ s/<\/TD>/<\/td>/gi; # FG seems case sensitive on these
-	$desc_1 =~ s/<TABLE>/<table>/gi; # FG seems case sensitive on these
-	$desc_1 =~ s/<\/TABLE>/<\/table>/gi; # FG seems case sensitive on these
-	$desc_1 =~ s/<P>/<p>/gi; # FG seems case sensitive on these
-	$desc_1 =~ s/<\/P>/<\/p>/gi; # FG seems case sensitive on these
-	$desc_1 =~ s/<B>/<b>/gi; # FG seems case sensitive on these
-	$desc_1 =~ s/<\/B>/<\/b>/gi; # FG seems case sensitive on these
-	$desc_1 =~ s/<I>/<i>/gi; # FG seems case sensitive on these
-	$desc_1 =~ s/<\/I>/<\/i>/gi; # FG seems case sensitive on these
+	$desc_1 =~ s/<TR>/<tr>/g; # FG seems case sensitive on these
+	$desc_1 =~ s/<\/TR>/<\/tr>/g; # FG seems case sensitive on these
+	$desc_1 =~ s/<TD>/<td>/g; # FG seems case sensitive on these
+	$desc_1 =~ s/<\/TD>/<\/td>/g; # FG seems case sensitive on these
+	$desc_1 =~ s/<TABLE>/<table>/g; # FG seems case sensitive on these
+	$desc_1 =~ s/<\/TABLE>/<\/table>/g; # FG seems case sensitive on these
+	$desc_1 =~ s/<P>/<p>/g; # FG seems case sensitive on these
+	$desc_1 =~ s/<\/P>/<\/p>/g; # FG seems case sensitive on these
+	$desc_1 =~ s/<B>/<b>/g; # FG seems case sensitive on these
+	$desc_1 =~ s/<\/B>/<\/b>/g; # FG seems case sensitive on these
+	$desc_1 =~ s/<I>/<i>/g; # FG seems case sensitive on these
+	$desc_1 =~ s/<\/I>/<\/i>/g; # FG seems case sensitive on these
     $desc_1 =~ s/table of contents//gi;
     #$desc_1 =~ s/((\s+)?<p>(\s+)?<\/p>(\s+)?)+?$//gi
     
-   #make sure to do this before the 
+   #make sure to do this... 
    $desc_1 = find_OutOfPlaceMarkup($desc_1);
-   ## before this, so that we clean up the markup
+   ## ...before this, so that we clean up the markup
    ## and get all the extra/bogus <p>s off the end.
    $desc_1 =~ s/((\s+)?<p>(\s+)?<\/p>(\s+)?)+?$//gi;
    ##
    
    # $wr->raw( $desc_1 );
-   $wr->raw( find_OutOfPlaceMarkup($desc_1) );
+   $wr->raw( $desc_1 );
    $wr->endTag('text');
    
    ## done with entry
