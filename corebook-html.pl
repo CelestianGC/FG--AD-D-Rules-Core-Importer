@@ -97,23 +97,6 @@ my $counter_html = 0;
             ## replace headers with bold and new lines
             $row =~ s/\<h\d>([^<]+)<\/h\d>/<p><b>$1<\/b><\/p>/gi;
 
-            # $row =~ s/\\xD7/x/gi;
-            # $row =~ s/\\xBC/1\/2/gi;
-            # $row =~ s/\\xBD/1\/2/gi;
-            # $row =~ s/\\x88/'/gi;
-            # $row =~ s/\\x9C/'/gi;
-            # $row =~ s/\\xFB/u/gi;
-            # $row =~ s/\\x88/'/gi;
-            # $row =~ s/\\x91/'/gi;
-            # $row =~ s/\\x92/'/gi;
-            # $row =~ s/\\x93/'/gi;
-            # $row =~ s/\\x94/'/gi;
-            # $row =~ s/\\x95//gi;
-            # $row =~ s/\\x96//gi;
-            # $row =~ s/\\x97//gi;
-            # $row =~ s/\\xD7/x/gi;
-            # $row =~ s/\\x..//gi;
-
             push (@desc, $row);
         } ## end of file while
         
@@ -436,6 +419,23 @@ sub cleanup_Description {
     $this_string =~ s/<I>/<i>/g; # FG seems case sensitive on these
     $this_string =~ s/<\/I>/<\/i>/g; # FG seems case sensitive on these
  
+    $this_string =~ s/\\xD7/x/gi;
+    $this_string =~ s/\\xBC/1\/2/gi;
+    $this_string =~ s/\\xBD/1\/2/gi;
+    $this_string =~ s/\\x88/'/gi;
+    $this_string =~ s/\\x9C/'/gi;
+    $this_string =~ s/\\xFB/u/gi;
+    $this_string =~ s/\\x88/'/gi;
+    $this_string =~ s/\\x91/'/gi;
+    $this_string =~ s/\\x92/'/gi;
+    $this_string =~ s/\\x93/'/gi;
+    $this_string =~ s/\\x94/'/gi;
+    $this_string =~ s/\\x95//gi;
+    $this_string =~ s/\\x96//gi;
+    $this_string =~ s/\\x97//gi;
+    $this_string =~ s/\\xD7/x/gi;
+    $this_string =~ s/\\x..//gi;
+
  return "$this_string";
  } ## end cleanup_Description
 
