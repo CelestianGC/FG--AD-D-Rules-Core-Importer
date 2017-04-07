@@ -13,13 +13,31 @@ use HTML::Tidy;
 ## use this to parse html
 
 my %mytree = {};
+my %myskills = {};
+my %myitems = {};
 my ($filepath,$outputfile) =  @ARGV;
+my ($outputfile_skills) = $outputfile."_skills";
+my ($outputfile_items) = $outputfile."_items";
 my $counter = 1;
 my $skipped_file = 0;
+my $skills_count = 0;
+my $item_count = 0;
+my $simple = XML::Simple->new( );             # initialize the object
 
 MAIN: {
     process_files();
     &as_xml();
+
+    ## if there are skills
+    if ($skills_count > 0) {
+        print "\nCreating $skills_count in $outputfile_skills also.\n";
+        &as_xml_skills();
+    }
+    if ($item_count > 0) {
+        print "\nCreating $item_count in $outputfile_items also.\n";
+        &as_xml_items();
+    }
+    
     print "\nDone.\n";
 }
 
@@ -43,7 +61,8 @@ my $counter_html = 0;
 		my $foundtitle = 0;
 		
 		while (my $row = <$fh>) {
-            if ($row !~ /<TITLE>(.*)--\s+(\d).. Level (\w+) (.*)(\(.*\))<\/TITLE>/i and 
+            if (
+            $row !~ /<TITLE>(.*)--\s+(\d).. Level (\w+) (.*)(\(.*\))<\/TITLE>/i and 
                 $row =~ /<TITLE>(.*)\((.*)\)<\/TITLE>/i) {
                 $name = trim($1);
                 $source = trim($2);
@@ -115,13 +134,42 @@ my $counter_html = 0;
         #print "===================>DESCRIPTION\n$description\n";
         
         ## found title, so lets push 
-		if ($foundtitle == 1) {
-			$mytree{$source}{$name}->{'description'}=$description;
-		} else {
-			print "\n*** *** Discarding file $filepath/$filename, did not find title. *** ***\n";
+        if ($foundtitle == 1) {
+            $mytree{$source}{$name}->{'description'}=$description;
+            #Agriculture-- Nonweapon Proficiency
+            if ($name =~ /(.*)(--) (Nonweapon Proficiency)/i) {
+                #Full match	0-35	`Agriculture-- Nonweapon Proficiency`
+                #Group 1.	0-11	`Agriculture`
+                #Group 2.	11-13	`--`
+                #Group 3.	13-35	` Nonweapon Proficiency`
+                my($name_skill) = $1;
+                $name_skill =~ s/--/,/g;
+                $myskills{'NonweaponProf'}{$name_skill}->{'description'}=$description;
+                $skills_count++;
+                print ("SKILL:Found $name_skill.\n");
+            } ## if nonweapon prof
+            
+            #Fire Breath-- Potion
+            #Beaker of Plentiful Potions-- Magical Item
+            #Protection from Petrification-- Scroll
+            #Scimitar of Speed-- Magical Weapon
+            if ($name =~ /(.*)(--) ((Potion)|(Magical Item)|(Scroll)|(Magical Weapon))/i) {
+                #Full match	0-21	`#Fire Breath-- Potion`
+                #Group 1.	0-12	`#Fire Breath`
+                #Group 2.	12-14	`--`
+                #Group 3.	15-21	`Potion`
+                #Group 4.	15-21	`Potion`                
+                my($name_item) = "$3, $1";
+                $name_item =~ s/--/,/g;
+                $myitems{'ItemMagicOrOtherwise'}{$name_item}->{'description'}=$description;
+                $item_count++;
+                print ("ITEM:Found $name_item.\n");
+            }## end potions/scrolls/etc
+        } else {
+            print "\n*** *** Discarding file $filepath/$filename, did not find title. *** ***\n";
             $skipped_file++;
-		}
-
+        }
+        
 		# reset to not
 		$foundtitle = 0;
         ## on to next file
@@ -142,11 +190,11 @@ my $counter_html = 0;
 
 # $mytree{$class}{$name}->{'description'}=$description;
 sub as_xml {
-my $simple = XML::Simple->new( );             # initialize the object
-my $output = IO::File->new("> $outputfile.xml");
-		
-#my $wr = new XML::Writer( DATA_MODE => 'true', DATA_INDENT => 2 );
-my $wr = new XML::Writer( OUTPUT => $output, DATA_MODE => 'true', DATA_INDENT => 2, UNSAFE => 'true' );
+    my $output = IO::File->new("> $outputfile.xml");  # xml output file
+    my $wr = new XML::Writer( OUTPUT => $output, 
+                            DATA_MODE => 'true', 
+                            DATA_INDENT => 2, 
+                            UNSAFE => 'true' );
 
  my $this_id = 0;
  
@@ -173,84 +221,12 @@ my $wr = new XML::Writer( OUTPUT => $output, DATA_MODE => 'true', DATA_INDENT =>
    $wr->startTag('text', type => "formattedtext" );
    my $desc_1 =  $mytree{$this_source}{$this_name}->{'description'};
 
-   ## replace only the ones after a period.
-#   $desc_1 =~ s/\.(\/\/n)/\.<\/p\>\<p\>/g; # new line
-
-   $desc_1 =~ tr{\n}{ }; #eol
-   $desc_1 =~ tr{\r}{ }; #return
-   $desc_1 =~ s/^<p><\/p> <\/b>//ig;
-#   $desc_1 =~ s/(<BR><\/FONT><\/TD><\/TR><\/TABLE>)//ig; # end of stuff from cast/save/range/etc table
-   $desc_1 =~ s/(<FONT([^>]+)?>)//ig; ## chuck all <FONT
-   $desc_1 =~ s/(<\/FONT>)//ig; ## chuck all </FONT
-   $desc_1 =~ s/(<A([^>]+)?>([^<]+)?<\/A>)   //ig; ## chuck all <a something=osdjfgn>some wasted text</a>
-
-   $desc_1 =~ s/\<small\>//ig; # remove <small/small>
-   $desc_1 =~ s/\<\/small\>//ig; # 
-   $desc_1 =~ s/\<th\>/<td>/ig; # swap th for td
-   $desc_1 =~ s/\<\/th\>/<\/td>/ig; # 
-   $desc_1 =~ s/\<br([^<]+)?\>//ig; #<br>
-   $desc_1 =~ s/\<b ([^<]+)?\>/<b>/ig; #<b *>
-	#<table class="ip">
-#   $desc_1 =~ s/\<table class\=\"ip\"\>/<table>/g; #<br>
-   $desc_1 =~ s/\<table[ ^>]+>/<table>/ig; #<br>
-	#<tr class="bk">
-#   $desc_1 =~ s/\<tr class\=\"bk\"\>/<tr>/g; #<br>
-   $desc_1 =~ s/\<tr [^>]+>/<tr>/ig; #<br>
-	#<tr class="cn">
-#   $desc_1 =~ s/\<tr class\=\"cn\"\>/<tr>/g; #<br>
-   $desc_1 =~ s/\<tr [^>]+>/<tr>/ig; #<br>
-   $desc_1 =~ s/\<td [^>]+>/<td>/ig; #<br>
-   #<ol></ol>
-   $desc_1 =~ s/\<ol\>//ig; #<br>
-   $desc_1 =~ s/\<\/ol\>//ig; #<br>
-   $desc_1 =~ s/\<ul\>//ig; #<br>
-   $desc_1 =~ s/\<ul[^>]+?\>//ig; #<ul>
-   $desc_1 =~ s/\<\/ul\>//ig; #<br>
-	$desc_1 =~ s/\<p [^>]+?\>/<p>/ig;
-	$desc_1 =~ s/\<i [^>]+?\>/<i>/ig;
-	$desc_1 =~ s/\<q>/<i>/ig;
-	$desc_1 =~ s/\<\/q>/<\/i>/ig;
-	$desc_1 =~ s/\<a[^>]+?\>//ig;
-	$desc_1 =~ s/\<\/a\>//ig;
-	$desc_1 =~ s/\<\/a //ig;
-	$desc_1 =~ s/\<img[^>]+?\>//ig;
-	#<map name="map"> 
-	$desc_1 =~ s/\<map[^>]+?\>//ig;
-	#<area 
-	$desc_1 =~ s/\<area[^>]+?\>//ig;
-	$desc_1 =~ s/\<href[^>]+?\>//ig;
-	$desc_1 =~ s/\<span[^>]+?\>//ig;
-	$desc_1 =~ s/\<\/span\>//ig;
-	#<table cellspacing="0" cellpadding="0"> 
-	$desc_1 =~ s/\<table [^>]+?\>/<table>/ig;
-	$desc_1 =~ s/\<th [^>]+?\>/<td>/ig;
-	$desc_1 =~ s/\<tr [^>]+?\>/<tr>/ig;
-	$desc_1 =~ s/\<\(/</ig;
-	# big hammer, tired of fucking with it
-	$desc_1 =~ s/\<h2>/<b>/ig;
-
-	$desc_1 =~ s/<\/html>//ig;
-	$desc_1 =~ s/<\/body>//ig; 
-
-	$desc_1 =~ s/<TR>/<tr>/g; # FG seems case sensitive on these
-	$desc_1 =~ s/<\/TR>/<\/tr>/g; # FG seems case sensitive on these
-	$desc_1 =~ s/<TD>/<td>/g; # FG seems case sensitive on these
-	$desc_1 =~ s/<\/TD>/<\/td>/g; # FG seems case sensitive on these
-	$desc_1 =~ s/<TABLE>/<table>/g; # FG seems case sensitive on these
-	$desc_1 =~ s/<\/TABLE>/<\/table>/g; # FG seems case sensitive on these
-	$desc_1 =~ s/<P>/<p>/g; # FG seems case sensitive on these
-	$desc_1 =~ s/<\/P>/<\/p>/g; # FG seems case sensitive on these
-	$desc_1 =~ s/<B>/<b>/g; # FG seems case sensitive on these
-	$desc_1 =~ s/<\/B>/<\/b>/g; # FG seems case sensitive on these
-	$desc_1 =~ s/<I>/<i>/g; # FG seems case sensitive on these
-	$desc_1 =~ s/<\/I>/<\/i>/g; # FG seems case sensitive on these
-    $desc_1 =~ s/table of contents//gi;
-    #$desc_1 =~ s/((\s+)?<p>(\s+)?<\/p>(\s+)?)+?$//gi
-    
+   $desc_1 = cleanup_Description($desc_1);
    #make sure to do this... 
    $desc_1 = find_OutOfPlaceMarkup($desc_1);
    ## ...before this, so that we clean up the markup
    ## and get all the extra/bogus <p>s off the end.
+   $desc_1 =~ s/table of contents//gi;
    $desc_1 =~ s/((\s+)?<p>(\s+)?<\/p>(\s+)?)+?$//gi;
    ##
    
@@ -273,6 +249,195 @@ my $wr = new XML::Writer( OUTPUT => $output, DATA_MODE => 'true', DATA_INDENT =>
  print "\nTotal imported:\t$this_id.\nTotal skipped $skipped_file.\n"
  
 } # enx as_xml 
+
+## write skills if they existed in the book?
+sub as_xml_skills {
+    my $output_skills = IO::File->new("> $outputfile_skills.xml");  # xml output file
+    my $wr_skills = new XML::Writer( OUTPUT => $output_skills, 
+                            DATA_MODE => 'true', 
+                            DATA_INDENT => 2, 
+                            UNSAFE => 'true' );
+
+ my $this_id = 0;
+ 
+ $wr_skills->startTag('skill');
+ foreach my $this_source (keys %myskills) {
+ 
+    foreach my $this_name (keys %{ $myskills{$this_source} })
+    {
+  
+        if ($this_name) { 
+            $this_id++;
+            my $this_id_string = sprintf("id-%05d", $this_id);
+            $wr_skills->startTag( $this_id_string );
+
+            print " Importing Skill Name: $this_source: $this_name.\n";
+
+            ##<name type="string">NameTEXT</name>
+            $wr_skills->startTag('name', type => "string" );
+            $wr_skills->raw( my_Escape($this_name) );
+            $wr_skills->endTag('name');
+
+
+            ##<description type="formattedtext">FormatedText</description>
+            $wr_skills->startTag('text', type => "formattedtext" );
+            my $desc_1 =  $myskills{$this_source}{$this_name}->{'description'};
+            $desc_1 = cleanup_Description($desc_1);
+            #make sure to do this... 
+            $desc_1 = find_OutOfPlaceMarkup($desc_1);
+            ## ...before this, so that we clean up the markup
+            ## and get all the extra/bogus <p>s off the end.
+            $desc_1 =~ s/table of contents//gi;
+            $desc_1 =~ s/((\s+)?<p>(\s+)?<\/p>(\s+)?)+?$//gi;
+            ##
+            # $wr_skills->raw( $desc_1 );
+            $wr_skills->raw( $desc_1 );
+            $wr_skills->endTag('text');
+
+            ## done with entry
+        $wr_skills->endTag( $this_id_string );
+        } ## end valid name
+    } ## end foreach
+ } ## end foreach sp_class
+ $wr_skills->endTag( 'skill' );
+ $wr_skills->end();
+ $output_skills->close();        
+
+ print "\nTotal Skills imported:\t$this_id.\n";
+ 
+} # enx as_xml 
+
+## write skills if they existed in the book?
+sub as_xml_items {
+my $output_items = IO::File->new("> $outputfile_items.xml");  # xml output file
+my $wr_items = new XML::Writer( OUTPUT => $output_items, 
+                            DATA_MODE => 'true', 
+                            DATA_INDENT => 2, 
+                            UNSAFE => 'true' );
+
+ my $this_id = 0;
+ 
+ $wr_items->startTag('item');
+ foreach my $this_source (keys %myitems) {
+ 
+    foreach my $this_name (keys %{ $myitems{$this_source} })
+    {
+  
+        if ($this_name) { 
+            $this_id++;
+            my $this_id_string = sprintf("id-%05d", ($this_id+100));
+            $wr_items->startTag( $this_id_string );
+
+            print " Importing Item Name: $this_source: $this_name.\n";
+
+            ##<name type="string">NameTEXT</name>
+            $wr_items->startTag('name', type => "string" );
+            $wr_items->raw( my_Escape($this_name) );
+            $wr_items->endTag('name');
+
+
+            ##<description type="formattedtext">FormatedText</description>
+            $wr_items->startTag('description', type => "formattedtext" );
+            my $desc_1 =  $myitems{$this_source}{$this_name}->{'description'};
+            $desc_1 = cleanup_Description($desc_1);
+            #make sure to do this... 
+            $desc_1 = find_OutOfPlaceMarkup($desc_1);
+            ## ...before this, so that we clean up the markup
+            ## and get all the extra/bogus <p>s off the end.
+            $desc_1 =~ s/table of contents//gi;
+            $desc_1 =~ s/((\s+)?<p>(\s+)?<\/p>(\s+)?)+?$//gi;
+            ##
+            # $wr_items->raw( $desc_1 );
+            $wr_items->raw( $desc_1 );
+            $wr_items->endTag('description');
+
+            ## done with entry
+        $wr_items->endTag( $this_id_string );
+        } ## end valid name
+    } ## end foreach
+ } ## end foreach sp_class
+ $wr_items->endTag( 'item' );
+ $wr_items->end();
+ $output_items->close();        
+
+ print "\nTotal Items imported:\t$this_id.\n";
+ 
+} # done with items
+
+sub cleanup_Description {
+ my($this_string)=@_;
+
+    $this_string =~ tr{\n}{ }; #eol
+    $this_string =~ tr{\r}{ }; #return
+    $this_string =~ s/^<p><\/p> <\/b>//ig;
+    #   $this_string =~ s/(<BR><\/FONT><\/TD><\/TR><\/TABLE>)//ig; # end of stuff from cast/save/range/etc table
+    $this_string =~ s/(<FONT([^>]+)?>)//ig; ## chuck all <FONT
+    $this_string =~ s/(<\/FONT>)//ig; ## chuck all </FONT
+    $this_string =~ s/(<A([^>]+)?>([^<]+)?<\/A>)   //ig; ## chuck all <a something=osdjfgn>some wasted text</a>
+
+    $this_string =~ s/\<small\>//ig; # remove <small/small>
+    $this_string =~ s/\<\/small\>//ig; # 
+    $this_string =~ s/\<th\>/<td>/ig; # swap th for td
+    $this_string =~ s/\<\/th\>/<\/td>/ig; # 
+    $this_string =~ s/\<br([^<]+)?\>//ig; #<br>
+    $this_string =~ s/\<b ([^<]+)?\>/<b>/ig; #<b *>
+    #<table class="ip">
+    #   $this_string =~ s/\<table class\=\"ip\"\>/<table>/g; 
+    $this_string =~ s/\<table[ ^>]+>/<table>/ig; 
+    #<tr class="bk">
+    #   $this_string =~ s/\<tr class\=\"bk\"\>/<tr>/g;  
+    $this_string =~ s/\<tr [^>]+>/<tr>/ig;  
+    #<tr class="cn">
+    #   $this_string =~ s/\<tr class\=\"cn\"\>/<tr>/g;  
+    $this_string =~ s/\<tr [^>]+>/<tr>/ig;  
+    $this_string =~ s/\<td [^>]+>/<td>/ig;  
+    #<ol></ol>
+    $this_string =~ s/\<ol\>//ig;  
+    $this_string =~ s/\<\/ol\>//ig;  
+    $this_string =~ s/\<ul\>//ig;  
+    $this_string =~ s/\<ul[^>]+?\>//ig; #<ul>
+    $this_string =~ s/\<\/ul\>//ig;  
+    $this_string =~ s/\<p [^>]+?\>/<p>/ig;
+    $this_string =~ s/\<i [^>]+?\>/<i>/ig;
+    $this_string =~ s/\<q>/<i>/ig;
+    $this_string =~ s/\<\/q>/<\/i>/ig;
+    $this_string =~ s/\<a[^>]+?\>//ig;
+    $this_string =~ s/\<\/a\>//ig;
+    $this_string =~ s/\<\/a //ig;
+    $this_string =~ s/\<img[^>]+?\>//ig;
+    #<map name="map"> 
+    $this_string =~ s/\<map[^>]+?\>//ig;
+    #<area 
+    $this_string =~ s/\<area[^>]+?\>//ig;
+    $this_string =~ s/\<href[^>]+?\>//ig;
+    $this_string =~ s/\<span[^>]+?\>//ig;
+    $this_string =~ s/\<\/span\>//ig;
+    #<table cellspacing="0" cellpadding="0"> 
+    $this_string =~ s/\<table [^>]+?\>/<table>/ig;
+    $this_string =~ s/\<th [^>]+?\>/<td>/ig;
+    $this_string =~ s/\<tr [^>]+?\>/<tr>/ig;
+    $this_string =~ s/\<\(/</ig;
+    # big hammer, tired of fucking with it
+    $this_string =~ s/\<h2>/<b>/ig;
+
+    $this_string =~ s/<\/html>//ig; 
+    $this_string =~ s/<\/body>//ig; 
+
+    $this_string =~ s/<TR>/<tr>/g; # FG seems case sensitive on these
+    $this_string =~ s/<\/TR>/<\/tr>/g; # FG seems case sensitive on these
+    $this_string =~ s/<TD>/<td>/g; # FG seems case sensitive on these
+    $this_string =~ s/<\/TD>/<\/td>/g; # FG seems case sensitive on these
+    $this_string =~ s/<TABLE>/<table>/g; # FG seems case sensitive on these
+    $this_string =~ s/<\/TABLE>/<\/table>/g; # FG seems case sensitive on these
+    $this_string =~ s/<P>/<p>/g; # FG seems case sensitive on these
+    $this_string =~ s/<\/P>/<\/p>/g; # FG seems case sensitive on these
+    $this_string =~ s/<B>/<b>/g; # FG seems case sensitive on these
+    $this_string =~ s/<\/B>/<\/b>/g; # FG seems case sensitive on these
+    $this_string =~ s/<I>/<i>/g; # FG seems case sensitive on these
+    $this_string =~ s/<\/I>/<\/i>/g; # FG seems case sensitive on these
+ 
+ return "$this_string";
+ } ## end cleanup_Description
 
 ## fix broken html 
 sub find_OutOfPlaceMarkup {
