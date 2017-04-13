@@ -82,5 +82,5 @@ To import the xml file into FG...
 * Below the "\</calendar\>" paste the text from spells.xml
 * Save the db.xml and close file.
 
-* Start the campaign again and look in your "Story" selection.
-* I export that into a module (/export and select Story) and then use the module in other campaigns. Keep this one for just updating the Spells module.  
+* Start the campaign again and look in your "Spells" selection.
+* I export that into a module (/export and select Spells) and then use the module in other campaigns. Keep this one for just updating the Spells module.  
