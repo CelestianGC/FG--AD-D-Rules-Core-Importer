@@ -136,7 +136,8 @@ my $counter_html = 0;
             #Beaker of Plentiful Potions-- Magical Item
             #Protection from Petrification-- Scroll
             #Scimitar of Speed-- Magical Weapon
-            if ($name =~ /(.*)(--) ((Potion)|(Magical Item)|(Scroll)|(Magical Weapon))/i) {
+            ##print "\nNAME-============>$name\n";
+            if ($name =~ /(.*)(--) ((Potion)|(Scroll)|(Magical))/i) {
                 #Full match	0-21	`#Fire Breath-- Potion`
                 #Group 1.	0-12	`#Fire Breath`
                 #Group 2.	12-14	`--`
@@ -147,7 +148,21 @@ my $counter_html = 0;
                 $myitems{'ItemMagicOrOtherwise'}{$name_item}->{'description'}=$description;
                 $item_count++;
                 print ("ITEM:Found $name_item.\n");
-            }## end potions/scrolls/etc
+                ## end potions/scrolls/etc
+            } elsif ($name =~ /((staff|wand|rod|ring) of(.*))/i) {
+                # Match 1
+                # Full match	7-27	`Ring of the Wizardry`
+                # Group 1.	7-27	`Ring of the Wizardry`
+                # Group 2.	7-11	`Ring`
+                # Group 3.	14-27	` the Wizardry`
+                my($name_item) = "$1";
+                $name_item =~ s/--/,/g;
+                $name_item = trim($name_item);
+                $myitems{'ItemMagicOrOtherwise'}{$name_item}->{'description'}=$description;
+                $item_count++;
+                print ("ITEM2:Found $name_item.\n");
+            }## end rod/staff/wand/ring
+            
         } else {
             print "\n*** *** Discarding file $filepath/$filename, did not find title. *** ***\n";
             $skipped_file++;
