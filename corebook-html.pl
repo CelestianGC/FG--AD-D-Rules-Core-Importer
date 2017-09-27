@@ -27,7 +27,8 @@ my $simple = XML::Simple->new( );             # initialize the object
 MAIN: {
     process_files();
     &as_xml();
-
+    &as_ref_manual();
+    
     ## if there are skills
     if ($skills_count > 0) {
         print "\nCreating $skills_count in $outputfile_skills also.\n";
@@ -186,181 +187,6 @@ my $counter_html = 0;
 } # end process files        
 
 
-# $mytree{$class}{$name}->{'description'}=$description;
-sub as_xml {
-    my $output = IO::File->new("> $outputfile.xml");  # xml output file
-    my $wr = new XML::Writer( OUTPUT => $output, 
-                            DATA_MODE => 'true', 
-                            DATA_INDENT => 2, 
-                            UNSAFE => 'true' );
-
- my $this_id = 0;
- 
- $wr->startTag('encounter');
- foreach my $this_source (keys %mytree) {
- 
- foreach my $this_name (keys %{ $mytree{$this_source} })
- {
-  
-  if ($this_name) { 
-   $this_id++;
-   my $this_id_string = sprintf("id-%05d", $this_id);
-   $wr->startTag( $this_id_string );
-
-   print " Importing Name: $this_source: $this_name.\n";
-
-   ##<name type="string">NameTEXT</name>
-   $wr->startTag('name', type => "string" );
-   $wr->raw( my_Escape($this_name) );
-   $wr->endTag('name');
-   
-   
-   ##<description type="formattedtext">FormatedText</description>
-   $wr->startTag('text', type => "formattedtext" );
-   my $desc_1 =  $mytree{$this_source}{$this_name}->{'description'};
-
-   $desc_1 = cleanup_Description($desc_1);
-   #make sure to do this... 
-   $desc_1 = find_OutOfPlaceMarkup($desc_1);
-   ## ...before this, so that we clean up the markup
-   ## and get all the extra/bogus <p>s off the end.
-   $desc_1 =~ s/table of contents//gi;
-   $desc_1 =~ s/((\s+)?<p>(\s+)?<\/p>(\s+)?)+?$//gi;
-   ##
-   
-   # $wr->raw( $desc_1 );
-   $wr->raw( $desc_1 );
-   $wr->endTag('text');
-   
-   ## done with entry
-   $wr->endTag( $this_id_string );
-   } ## end valid name
-	
-	$counter++;
-	} ## end foreach
- } ## end foreach sp_class
- $wr->endTag( 'encounter' );
-
- $wr->end();
- $output->close();        
- 
- print "\nTotal imported:\t$this_id.\nTotal skipped $skipped_file.\n"
- 
-} # enx as_xml 
-
-## write skills if they existed in the book?
-sub as_xml_skills {
-    my $output_skills = IO::File->new("> $outputfile_skills.xml");  # xml output file
-    my $wr_skills = new XML::Writer( OUTPUT => $output_skills, 
-                            DATA_MODE => 'true', 
-                            DATA_INDENT => 2, 
-                            UNSAFE => 'true' );
-
- my $this_id = 0;
- 
- $wr_skills->startTag('skill');
- foreach my $this_source (keys %myskills) {
- 
-    foreach my $this_name (keys %{ $myskills{$this_source} })
-    {
-  
-        if ($this_name) { 
-            $this_id++;
-            my $this_id_string = sprintf("id-%05d", $this_id);
-            $wr_skills->startTag( $this_id_string );
-
-            print " Importing Skill Name: $this_source: $this_name.\n";
-
-            ##<name type="string">NameTEXT</name>
-            $wr_skills->startTag('name', type => "string" );
-            $wr_skills->raw( my_Escape($this_name) );
-            $wr_skills->endTag('name');
-
-
-            ##<description type="formattedtext">FormatedText</description>
-            $wr_skills->startTag('text', type => "formattedtext" );
-            my $desc_1 =  $myskills{$this_source}{$this_name}->{'description'};
-            $desc_1 = cleanup_Description($desc_1);
-            #make sure to do this... 
-            $desc_1 = find_OutOfPlaceMarkup($desc_1);
-            ## ...before this, so that we clean up the markup
-            ## and get all the extra/bogus <p>s off the end.
-            $desc_1 =~ s/table of contents//gi;
-            $desc_1 =~ s/((\s+)?<p>(\s+)?<\/p>(\s+)?)+?$//gi;
-            ##
-            # $wr_skills->raw( $desc_1 );
-            $wr_skills->raw( $desc_1 );
-            $wr_skills->endTag('text');
-
-            ## done with entry
-        $wr_skills->endTag( $this_id_string );
-        } ## end valid name
-    } ## end foreach
- } ## end foreach sp_class
- $wr_skills->endTag( 'skill' );
- $wr_skills->end();
- $output_skills->close();        
-
- print "\nTotal Skills imported:\t$this_id.\n";
- 
-} # enx as_xml 
-
-## write skills if they existed in the book?
-sub as_xml_items {
-my $output_items = IO::File->new("> $outputfile_items.xml");  # xml output file
-my $wr_items = new XML::Writer( OUTPUT => $output_items, 
-                            DATA_MODE => 'true', 
-                            DATA_INDENT => 2, 
-                            UNSAFE => 'true' );
-
- my $this_id = 0;
- 
- $wr_items->startTag('item');
- foreach my $this_source (keys %myitems) {
- 
-    foreach my $this_name (keys %{ $myitems{$this_source} })
-    {
-  
-        if ($this_name) { 
-            $this_id++;
-            my $this_id_string = sprintf("id-%05d", ($this_id+100));
-            $wr_items->startTag( $this_id_string );
-
-            print " Importing Item Name: $this_source: $this_name.\n";
-
-            ##<name type="string">NameTEXT</name>
-            $wr_items->startTag('name', type => "string" );
-            $wr_items->raw( my_Escape($this_name) );
-            $wr_items->endTag('name');
-
-
-            ##<description type="formattedtext">FormatedText</description>
-            $wr_items->startTag('description', type => "formattedtext" );
-            my $desc_1 =  $myitems{$this_source}{$this_name}->{'description'};
-            $desc_1 = cleanup_Description($desc_1);
-            #make sure to do this... 
-            $desc_1 = find_OutOfPlaceMarkup($desc_1);
-            ## ...before this, so that we clean up the markup
-            ## and get all the extra/bogus <p>s off the end.
-            $desc_1 =~ s/table of contents//gi;
-            $desc_1 =~ s/((\s+)?<p>(\s+)?<\/p>(\s+)?)+?$//gi;
-            ##
-            # $wr_items->raw( $desc_1 );
-            $wr_items->raw( $desc_1 );
-            $wr_items->endTag('description');
-
-            ## done with entry
-        $wr_items->endTag( $this_id_string );
-        } ## end valid name
-    } ## end foreach
- } ## end foreach sp_class
- $wr_items->endTag( 'item' );
- $wr_items->end();
- $output_items->close();        
-
- print "\nTotal Items imported:\t$this_id.\n";
- 
-} # done with items
 
 sub cleanup_Description {
  my($this_string)=@_;
@@ -551,3 +377,339 @@ sub my_Escape {
  return "$this_string";
 }
 
+
+# $mytree{$class}{$name}->{'description'}=$description;
+# <[reference_manual_navigation_data_path]>
+  # <chapters>
+    # <[chapter_00]>
+      # <name type="string">[Chapter Name]</name>
+      # <subchapters>
+        # <[subchapter_00]>
+          # <name type="string">[Subchapter Name]</name>
+          # <refpages>
+            # <[refpage_00]>
+              # <name type="string">[Page Name]</name>
+              # <text type="formattedtext">[Optional. Any formatted text to display before the manual data.]</text>
+              # <keywords type="string">[List of Keywords to be searchable separated by spaces]</keywords>
+                # <listlink type="windowreference">
+                    # <class>reference_manualtextwide</class>
+                    # <recordname>..</recordname>
+                    # <description field="name" />
+                # </listlink>
+              # <blocks>
+                # <[block_01]>
+                  # <blocktype type="string">[See below]</blocktype>
+                  # <align type="string">[See below]</align>
+                  # <size type="string">[Only used for image/token blocks. Comma delimited width and height of image/token.]</size>
+                  # <frame type="string">[Only used for text blocks. See below.]</size>
+                  # <image type="image"><bitmap>[Only used for image blocks. Local file path to image within the module.]</bitmap></image>
+                  # <picture type="token">[Only used for token blocks. Local file path to token within the module.]</picture >
+                  # <text type="formattedtext">[Only used for text blocks. Textual information to display]</text>
+                  # <text2 type="formattedtext">[Only used for multi-column text blocks. Textual information to display]</text2>
+                # </[block_01]>
+                # ...
+              # </blocks>
+            # </[refpage_00]>
+          # </refpages>
+        # </[subchapter_00]>
+        # ...
+      # </subchapters>
+    # </[chapter_00]>
+    # ...
+  # </chapters>
+# </[reference_manual_navigation_data_path]>
+sub as_ref_manual {
+    my $output = IO::File->new("> $outputfile.client.xml");  # xml output file
+    my $wr = new XML::Writer( OUTPUT => $output, 
+                            DATA_MODE => 'true', 
+                            DATA_INDENT => 2, 
+                            UNSAFE => 'true' );
+
+ my $this_id = 0;
+ my $this_chapter = 0;
+ my $this_subchapter = 0;
+ my $this_refpage = 0;
+ my $this_block = 0;
+ 
+ $wr->startTag('reference');
+ $wr->startTag('refmanualindex');
+ $wr->startTag('chapters');
+
+   $this_chapter++;
+   my $this_id_chapter = sprintf("chapter-%05d", $this_chapter);
+     $wr->startTag($this_id_chapter);
+        $wr->startTag('name', type => "string" );
+        $wr->raw( my_Escape($outputfile));
+        $wr->endTag('name');
+ foreach my $this_source (sort keys %mytree) {
+ print " (REF) Importing Source: $this_source\n";
+ foreach my $this_name (sort keys %{ $mytree{$this_source} })
+ {
+  
+  if ($this_name) { 
+   print " (REF) Importing Name: $this_name.\n";
+    
+   $this_id++;
+   $this_subchapter++;
+   $this_refpage++;
+   $this_block++;
+   
+   #my $this_id_string = sprintf("id-%05d", $this_id);
+   $wr->startTag('subchapters');
+   my $this_id_subchapter = sprintf("subchapter-%05d", $this_subchapter);
+   my $this_id_refpage = sprintf("refpage-%05d", $this_refpage);
+   my $this_id_block = sprintf("block-%05d", $this_block);
+    $wr->startTag( $this_id_subchapter );
+        $wr->startTag('name', type => "string" );
+        $wr->raw( my_Escape($this_name) );
+        $wr->endTag('name');
+    
+    $wr->startTag('refpages');
+    $wr->startTag( $this_id_refpage );
+        $wr->startTag('name', type => "string" );
+        $wr->raw( my_Escape($this_name) );
+        $wr->endTag('name');
+        
+        $wr->startTag('keywords', type => "string" );
+        $wr->raw( my_Escape($this_name) );
+        $wr->endTag('keywords');
+    # <listlink type="windowreference">
+        $wr->startTag('listlink', type => "windowreference" );
+    # <class>reference_manualtextwide</class>
+            $wr->startTag('class');
+            $wr->raw( "reference_manualtextwide" );
+            $wr->endTag('class');
+    # <recordname>..</recordname>
+            $wr->startTag('recordname');
+            $wr->raw( ".." );
+            $wr->endTag('recordname');
+    # <description field="name" />
+            $wr->startTag('description', type => "field" );
+            $wr->raw( "name" );
+            $wr->endTag('description');
+        $wr->endTag('listlink');
+        
+    $wr->startTag('blocks');
+    $wr->startTag( $this_id_block );
+    
+   ##<description type="formattedtext">FormatedText</description>
+   $wr->startTag('text', type => "formattedtext" );
+   my $desc_1 =  $mytree{$this_source}{$this_name}->{'description'};
+
+   $desc_1 = cleanup_Description($desc_1);
+   #make sure to do this... 
+   $desc_1 = find_OutOfPlaceMarkup($desc_1);
+   ## ...before this, so that we clean up the markup
+   ## and get all the extra/bogus <p>s off the end.
+   $desc_1 =~ s/table of contents//gi;
+   $desc_1 =~ s/((\s+)?<p>(\s+)?<\/p>(\s+)?)+?$//gi;
+   ##
+   
+   # $wr->raw( $desc_1 );
+   $wr->raw( $desc_1 );
+   $wr->endTag('text');
+   
+   ## done with entry
+   $wr->endTag( $this_id_block );
+   $wr->endTag('blocks');
+   $wr->endTag( $this_id_refpage );
+   $wr->endTag('refpages');
+   $wr->endTag( $this_id_subchapter );
+   $wr->endTag( 'subchapters' );
+   
+#--   $wr->endTag( $this_id_string );
+
+   } ## end valid name
+	
+	$counter++;
+
+	} ## end foreach
+
+ } ## end foreach sp_class
+ 
+ $wr->endTag( $this_id_chapter );
+ $wr->endTag( 'chapters' );
+ $wr->endTag( 'refmanualindex' );
+ $wr->endTag( 'reference' );
+
+ $wr->end();
+ $output->close();        
+ 
+ print "\nTotal imported:\t$this_id.\nTotal skipped $skipped_file.\n"
+ 
+} # end as_ref_manual 
+
+sub as_xml {
+    my $output = IO::File->new("> $outputfile.xml");  # xml output file
+    my $wr = new XML::Writer( OUTPUT => $output, 
+                            DATA_MODE => 'true', 
+                            DATA_INDENT => 2, 
+                            UNSAFE => 'true' );
+
+ my $this_id = 0;
+ 
+ $wr->startTag('encounter');
+ foreach my $this_source (keys %mytree) {
+ 
+ foreach my $this_name (keys %{ $mytree{$this_source} })
+ {
+  
+  if ($this_name) { 
+   $this_id++;
+   my $this_id_string = sprintf("id-%05d", $this_id);
+   $wr->startTag( $this_id_string );
+
+   print " Importing Name: $this_source: $this_name.\n";
+
+   ##<name type="string">NameTEXT</name>
+   $wr->startTag('name', type => "string" );
+   $wr->raw( my_Escape($this_name) );
+   $wr->endTag('name');
+   
+   
+   ##<description type="formattedtext">FormatedText</description>
+   $wr->startTag('text', type => "formattedtext" );
+   my $desc_1 =  $mytree{$this_source}{$this_name}->{'description'};
+
+   $desc_1 = cleanup_Description($desc_1);
+   #make sure to do this... 
+   $desc_1 = find_OutOfPlaceMarkup($desc_1);
+   ## ...before this, so that we clean up the markup
+   ## and get all the extra/bogus <p>s off the end.
+   $desc_1 =~ s/table of contents//gi;
+   $desc_1 =~ s/((\s+)?<p>(\s+)?<\/p>(\s+)?)+?$//gi;
+   ##
+   
+   # $wr->raw( $desc_1 );
+   $wr->raw( $desc_1 );
+   $wr->endTag('text');
+   
+   ## done with entry
+   $wr->endTag( $this_id_string );
+   } ## end valid name
+	
+	$counter++;
+	} ## end foreach
+ } ## end foreach sp_class
+ $wr->endTag( 'encounter' );
+
+ $wr->end();
+ $output->close();        
+ 
+ print "\nTotal imported:\t$this_id.\nTotal skipped $skipped_file.\n"
+ 
+} # enx as_xml 
+
+## write skills if they existed in the book?
+sub as_xml_skills {
+    my $output_skills = IO::File->new("> $outputfile_skills.xml");  # xml output file
+    my $wr_skills = new XML::Writer( OUTPUT => $output_skills, 
+                            DATA_MODE => 'true', 
+                            DATA_INDENT => 2, 
+                            UNSAFE => 'true' );
+
+ my $this_id = 0;
+ 
+ $wr_skills->startTag('skill');
+ foreach my $this_source (keys %myskills) {
+ 
+    foreach my $this_name (keys %{ $myskills{$this_source} })
+    {
+  
+        if ($this_name) { 
+            $this_id++;
+            my $this_id_string = sprintf("id-%05d", $this_id);
+            $wr_skills->startTag( $this_id_string );
+
+            print " Importing Skill Name: $this_source: $this_name.\n";
+
+            ##<name type="string">NameTEXT</name>
+            $wr_skills->startTag('name', type => "string" );
+            $wr_skills->raw( my_Escape($this_name) );
+            $wr_skills->endTag('name');
+
+
+            ##<description type="formattedtext">FormatedText</description>
+            $wr_skills->startTag('text', type => "formattedtext" );
+            my $desc_1 =  $myskills{$this_source}{$this_name}->{'description'};
+            $desc_1 = cleanup_Description($desc_1);
+            #make sure to do this... 
+            $desc_1 = find_OutOfPlaceMarkup($desc_1);
+            ## ...before this, so that we clean up the markup
+            ## and get all the extra/bogus <p>s off the end.
+            $desc_1 =~ s/table of contents//gi;
+            $desc_1 =~ s/((\s+)?<p>(\s+)?<\/p>(\s+)?)+?$//gi;
+            ##
+            # $wr_skills->raw( $desc_1 );
+            $wr_skills->raw( $desc_1 );
+            $wr_skills->endTag('text');
+
+            ## done with entry
+        $wr_skills->endTag( $this_id_string );
+        } ## end valid name
+    } ## end foreach
+ } ## end foreach sp_class
+ $wr_skills->endTag( 'skill' );
+ $wr_skills->end();
+ $output_skills->close();        
+
+ print "\nTotal Skills imported:\t$this_id.\n";
+ 
+} # enx as_xml 
+
+## write skills if they existed in the book?
+sub as_xml_items {
+my $output_items = IO::File->new("> $outputfile_items.xml");  # xml output file
+my $wr_items = new XML::Writer( OUTPUT => $output_items, 
+                            DATA_MODE => 'true', 
+                            DATA_INDENT => 2, 
+                            UNSAFE => 'true' );
+
+ my $this_id = 0;
+ 
+ $wr_items->startTag('item');
+ foreach my $this_source (keys %myitems) {
+ 
+    foreach my $this_name (keys %{ $myitems{$this_source} })
+    {
+  
+        if ($this_name) { 
+            $this_id++;
+            my $this_id_string = sprintf("id-%05d", ($this_id+100));
+            $wr_items->startTag( $this_id_string );
+
+            print " Importing Item Name: $this_source: $this_name.\n";
+
+            ##<name type="string">NameTEXT</name>
+            $wr_items->startTag('name', type => "string" );
+            $wr_items->raw( my_Escape($this_name) );
+            $wr_items->endTag('name');
+
+
+            ##<description type="formattedtext">FormatedText</description>
+            $wr_items->startTag('description', type => "formattedtext" );
+            my $desc_1 =  $myitems{$this_source}{$this_name}->{'description'};
+            $desc_1 = cleanup_Description($desc_1);
+            #make sure to do this... 
+            $desc_1 = find_OutOfPlaceMarkup($desc_1);
+            ## ...before this, so that we clean up the markup
+            ## and get all the extra/bogus <p>s off the end.
+            $desc_1 =~ s/table of contents//gi;
+            $desc_1 =~ s/((\s+)?<p>(\s+)?<\/p>(\s+)?)+?$//gi;
+            ##
+            # $wr_items->raw( $desc_1 );
+            $wr_items->raw( $desc_1 );
+            $wr_items->endTag('description');
+
+            ## done with entry
+        $wr_items->endTag( $this_id_string );
+        } ## end valid name
+    } ## end foreach
+ } ## end foreach sp_class
+ $wr_items->endTag( 'item' );
+ $wr_items->end();
+ $output_items->close();        
+
+ print "\nTotal Items imported:\t$this_id.\n";
+ 
+} # done with items
