@@ -502,6 +502,7 @@ sub as_ref_manual {
    ## ...before this, so that we clean up the markup
    ## and get all the extra/bogus <p>s off the end.
    $desc_1 =~ s/table of contents//gi;
+   $desc_1 =~ s/(<p>(\s+)?<\/p>(\s+)?<p>(\s+)?<\/p>)+?/<p><\/p>/gi;
    $desc_1 =~ s/((\s+)?<p>(\s+)?<\/p>(\s+)?)+?$//gi;
    ##
    
