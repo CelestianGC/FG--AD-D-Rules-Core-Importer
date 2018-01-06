@@ -2,6 +2,7 @@
 #
 use strict;
 use warnings;
+use File::Basename;
 use Data::Dumper;
 use XML::Entities;
 use HTML::Entities;
@@ -45,6 +46,7 @@ MAIN: {
 sub process_files {
 print "-------------> $filepath and $outputfile.xml\n";
 my $counter_html = 0;
+
 	opendir my $dir, $filepath or die "Cannot open directory: $!";
 	my @files = readdir $dir;
 	closedir $dir;
@@ -53,7 +55,10 @@ my $counter_html = 0;
 	@files = sort @files;
 	foreach my $filename (@files) {
 		print "opening $filepath/$filename\n";
-
+        (my $this_record = $filename) =~ s/\.[^.]+$//;
+        $this_record =~ s/^\D+(\d+)$/$1/i;
+#print "-------->>>>record: $this_record\n";
+#-------->>>>record: DD05984
 		open(my $fh, '<:encoding(UTF-8)', "$filepath/$filename")  or die "Could not open file '$filepath/$filename' $!";
 
 		my $name = "UNKNOWN";
@@ -66,6 +71,7 @@ my $counter_html = 0;
             $row !~ /<TITLE>(.*)--\s+(\d).. Level (\w+) (.*)(\(.*\))<\/TITLE>/i and 
                 $row =~ /<TITLE>(.*)\((.*)\)<\/TITLE>/i) {
                 $name = trim($1);
+                #$name = findNewName("~".$name); ## make sure name is new
                 $source = trim($2);
                 $foundtitle = 1;
                 print "\n** FOUND PAGE, $1 in $2\n";
@@ -119,7 +125,11 @@ my $counter_html = 0;
         
         ## found title, so lets push 
         if ($foundtitle == 1) {
-            $mytree{$source}{$name}->{'description'}=$description;
+print "-------->>>>source: $source, record: $this_record\n";            
+            ## ADD EVERYTING first as story entry
+            $mytree{$source}{$this_record}{$name}->{'description'}=$description;
+            #$mytree{$source}{$name}->{'description'}=$description;
+            
             #Agriculture-- Nonweapon Proficiency
             if ($name =~ /(.*)(--) (Nonweapon Proficiency)/i) {
                 #Full match	0-35	`Agriculture-- Nonweapon Proficiency`
@@ -175,17 +185,33 @@ my $counter_html = 0;
 	} # end while for files()
 
 		foreach my $item_source (sort keys %mytree) {
+
+            foreach my $item_record (sort keys %{ $mytree{$item_source} }) {
 #			print "SOURCE: $item_source\n";
-			foreach my $item_name (sort keys %{ $mytree{$item_source} }) {
-#				print "NAME: $item_name\n";
-#				print "Desc: ".$mytree{$item_source}{$item_name}{'description'}."\n";
-			$counter_html++;
-			}
+                foreach my $item_name (sort keys %{ $mytree{$item_source}{$item_record} }) {
+    #				print "NAME: $item_name\n";
+    #				print "Desc: ".$mytree{$item_source}${item_record}{$item_name}{'description'}."\n";
+                $counter_html++;
+                }
+            } ## item_record
 		}
 		print "\n\nTotal html files accepted = $counter_html\n";
 		#print Dumper(%mytree);
 } # end process files        
 
+sub findNewName {
+    my ($name) = @_;
+    
+    foreach my $key (keys %mytree) {
+        if ($mytree{$key}{$name}->{'description'} != "") {
+            print "RAN INTO DUPLICENAME: $name\n.";
+            $name = findNewName("~".$name);
+            last;
+        }
+    }
+    
+    return $name;
+}
 
 
 sub cleanup_Description {
@@ -427,74 +453,107 @@ sub as_ref_manual {
 
  my $this_id = 0;
  my $this_chapter = 0;
+ my $this_id_chapter = "";
+ 
  my $this_subchapter = 0;
+ my $this_id_subchapter = "";
+ my $subchapter_renewed = 0;
+
  my $this_refpage = 0;
+ my $this_id_refpage = "";
+ 
  my $this_block = 0;
  
  $wr->startTag('reference');
  $wr->startTag('refmanualindex');
- $wr->startTag('chapters');
-
+   $wr->startTag('chapters');
    $this_chapter++;
-   my $this_id_chapter = sprintf("chapter-%05d", $this_chapter);
+   $this_id_chapter = sprintf("chapter-%05d", $this_chapter);
      $wr->startTag($this_id_chapter);
         $wr->startTag('name', type => "string" );
         $wr->raw( my_Escape($outputfile));
         $wr->endTag('name');
+    
+    ## SUBCHAPTER WIDE BLOCK
+    $wr->startTag('subchapters');
+        
  foreach my $this_source (sort keys %mytree) {
  print " (REF) Importing Source: $this_source\n";
- foreach my $this_name (sort keys %{ $mytree{$this_source} })
+ foreach my $this_record (sort keys %{ $mytree{$this_source} }) {
+ foreach my $this_name (sort keys %{ $mytree{$this_source}{$this_record} })
  {
   
   if ($this_name) { 
-   print " (REF) Importing Name: $this_name.\n";
+   print " (REF) Importing Name: $this_name from record: $this_record in source: $this_source.\n";
     
    $this_id++;
-   $this_subchapter++;
-   $this_refpage++;
-   $this_block++;
-   
-   #my $this_id_string = sprintf("id-%05d", $this_id);
-   $wr->startTag('subchapters');
-   my $this_id_subchapter = sprintf("subchapter-%05d", $this_subchapter);
-   my $this_id_refpage = sprintf("refpage-%05d", $this_refpage);
-   my $this_id_block = sprintf("block-%05d", $this_block);
-    $wr->startTag( $this_id_subchapter );
-        $wr->startTag('name', type => "string" );
-        $wr->raw( my_Escape($this_name) );
-        $wr->endTag('name');
+
+   ## SUBCHAPTER
+   ## either we've never had a new subchapter or the name triggers new subchapter
+   if ($this_subchapter == 0 or $this_name =~ /chap|intro|credits|foreward|appendix|index|welcome/i) { ## if "Chapter" in name, just make a new sub
+        $subchapter_renewed = 1;
+        if ($this_subchapter != 0) {
+            if ($this_refpage != 0) {
+                $wr->endTag( $this_id_refpage );
+                $wr->endTag('refpages');
+            } ## 
+            $wr->endTag( $this_id_subchapter );
+            ## SUBCHAPTER END
+       }
+        $this_subchapter++;
+        $this_id_subchapter = sprintf("subchapter-%05d", $this_subchapter);
+        $wr->startTag( $this_id_subchapter );
+            $wr->startTag('name', type => "string" );
+            $wr->raw( my_Escape($this_name) );
+            $wr->endTag('name');
     
-    $wr->startTag('refpages');
+        ## REFPAGE
+        $wr->startTag('refpages');
+    } else { ## end check if sub-chapter needs to be made
+        $subchapter_renewed = 0;
+    }
+
+    ## either subchapters updated or we've never
+    ## had a refpage yet
+   
+    ## REFPAGE, always add one
+    $wr->endTag( $this_id_refpage ) if ($this_refpage != 0 && $subchapter_renewed != 1);
+    $this_refpage++;
+    $this_id_refpage = sprintf("refpage-%05d", $this_refpage);
     $wr->startTag( $this_id_refpage );
-        $wr->startTag('name', type => "string" );
-        $wr->raw( my_Escape($this_name) );
-        $wr->endTag('name');
-        
-        $wr->startTag('keywords', type => "string" );
-        $wr->raw( my_Escape($this_name) );
-        $wr->endTag('keywords');
+    ## Name/Keyboards
+    $wr->startTag('name', type => "string" );
+    $wr->raw( my_Escape($this_name) );
+    $wr->endTag('name');
+    $wr->startTag('keywords', type => "string" );
+    $wr->raw( my_Escape($this_name) );
+    $wr->endTag('keywords');
     # <listlink type="windowreference">
-        $wr->startTag('listlink', type => "windowreference" );
-    # <class>reference_manualtextwide</class>
-            $wr->startTag('class');
-            $wr->raw( "reference_manualtextwide" );
-            $wr->endTag('class');
-    # <recordname>..</recordname>
-            $wr->startTag('recordname');
-            $wr->raw( ".." );
-            $wr->endTag('recordname');
-    # <description field="name" />
-            $wr->startTag('description', type => "field" );
-            $wr->raw( "name" );
-            $wr->endTag('description');
-        $wr->endTag('listlink');
-        
+    $wr->startTag('listlink', type => "windowreference" );
+        # <class>reference_manualtextwide</class>
+        $wr->startTag('class');
+        $wr->raw( "reference_manualtextwide" );
+        $wr->endTag('class');
+        # <recordname>..</recordname>
+        $wr->startTag('recordname');
+        $wr->raw( ".." );
+        $wr->endTag('recordname');
+        # <description field="name" />
+        $wr->startTag('description', type => "field" );
+        $wr->raw( "name" );
+        $wr->endTag('description');
+    $wr->endTag('listlink');
+    
+    
+    ##BLOCK SECTION
+    $this_block++;
+    my $this_id_block = sprintf("block-%05d", $this_block);
     $wr->startTag('blocks');
     $wr->startTag( $this_id_block );
     
    ##<description type="formattedtext">FormatedText</description>
    $wr->startTag('text', type => "formattedtext" );
-   my $desc_1 =  $mytree{$this_source}{$this_name}->{'description'};
+   my $desc_1 =  $mytree{$this_source}{$this_record}{$this_name}->{'description'};
 
    $desc_1 = cleanup_Description($desc_1);
    #make sure to do this... 
@@ -513,10 +572,7 @@ sub as_ref_manual {
    ## done with entry
    $wr->endTag( $this_id_block );
    $wr->endTag('blocks');
-   $wr->endTag( $this_id_refpage );
-   $wr->endTag('refpages');
-   $wr->endTag( $this_id_subchapter );
-   $wr->endTag( 'subchapters' );
+   ## BLOCK END
    
 #--   $wr->endTag( $this_id_string );
 
@@ -525,13 +581,22 @@ sub as_ref_manual {
 	$counter++;
 
 	} ## end foreach
+    } ## end foreach record
 
  } ## end foreach sp_class
  
- $wr->endTag( $this_id_chapter );
- $wr->endTag( 'chapters' );
- $wr->endTag( 'refmanualindex' );
- $wr->endTag( 'reference' );
+    ## close ref/subchapters/chapters, we're done.
+    $wr->endTag( $this_id_refpage );
+    $wr->endTag('refpages');
+    ## REFPAGE END
+    $wr->endTag( $this_id_subchapter );
+    ## SUBCHAPTER END
+    $wr->endTag( 'subchapters' );
+    ## SUBCHAPTER END WIDE
+    $wr->endTag( $this_id_chapter );
+    $wr->endTag( 'chapters' );
+    $wr->endTag( 'refmanualindex' );
+    $wr->endTag( 'reference' );
 
  $wr->end();
  $output->close();        
@@ -550,9 +615,10 @@ sub as_xml {
  my $this_id = 0;
  
  $wr->startTag('encounter');
- foreach my $this_source (keys %mytree) {
+ foreach my $this_source (sort keys %mytree) {
  
- foreach my $this_name (keys %{ $mytree{$this_source} })
+ foreach my $this_record (sort keys %{ $mytree{$this_source} }) {
+ foreach my $this_name (sort keys %{ $mytree{$this_source}{$this_record} })
  {
   
   if ($this_name) { 
@@ -560,7 +626,7 @@ sub as_xml {
    my $this_id_string = sprintf("id-%05d", $this_id);
    $wr->startTag( $this_id_string );
 
-   print " Importing Name: $this_source: $this_name.\n";
+   print " (STORY) Importing source:$this_source record:$this_record name:$this_name (ID:$this_id_string).\n";
 
    ##<name type="string">NameTEXT</name>
    $wr->startTag('name', type => "string" );
@@ -570,7 +636,7 @@ sub as_xml {
    
    ##<description type="formattedtext">FormatedText</description>
    $wr->startTag('text', type => "formattedtext" );
-   my $desc_1 =  $mytree{$this_source}{$this_name}->{'description'};
+   my $desc_1 =  $mytree{$this_source}{$this_record}{$this_name}->{'description'};
 
    $desc_1 = cleanup_Description($desc_1);
    #make sure to do this... 
@@ -591,6 +657,7 @@ sub as_xml {
 	
 	$counter++;
 	} ## end foreach
+    } ## end foreach record
  } ## end foreach sp_class
  $wr->endTag( 'encounter' );
 
