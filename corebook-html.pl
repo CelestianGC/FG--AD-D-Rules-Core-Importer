@@ -490,7 +490,7 @@ sub as_ref_manual {
 
    ## SUBCHAPTER
    ## either we've never had a new subchapter or the name triggers new subchapter
-   if ($this_subchapter == 0 or $this_name =~ /chap|intro|credits|foreward|appendix|index|welcome/i) { ## if "Chapter" in name, just make a new sub
+   if ($this_subchapter == 0 or $this_name =~ /chap|intro|credits|foreward|appendix|index|welcome|table of content/i) { ## if "Chapter" in name, just make a new sub
         $subchapter_renewed = 1;
         if ($this_subchapter != 0) {
             if ($this_refpage != 0) {
