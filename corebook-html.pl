@@ -2,7 +2,7 @@
 #
 use strict;
 use warnings;
-use File::Basename;
+#use File::Basename;
 use Data::Dumper;
 use XML::Entities;
 use HTML::Entities;
@@ -55,10 +55,11 @@ my $counter_html = 0;
 	@files = sort @files;
 	foreach my $filename (@files) {
 		print "opening $filepath/$filename\n";
+        ## strip off trailing .ext
         (my $this_record = $filename) =~ s/\.[^.]+$//;
+        ## strip off leading letters
         $this_record =~ s/^\D+(\d+)$/$1/i;
-#print "-------->>>>record: $this_record\n";
-#-------->>>>record: DD05984
+        ## now it's just a number, sorts nicely!
 		open(my $fh, '<:encoding(UTF-8)', "$filepath/$filename")  or die "Could not open file '$filepath/$filename' $!";
 
 		my $name = "UNKNOWN";
@@ -67,15 +68,24 @@ my $counter_html = 0;
 		my $foundtitle = 0;
 		
 		while (my $row = <$fh>) {
-            if (
-            $row !~ /<TITLE>(.*)--\s+(\d).. Level (\w+) (.*)(\(.*\))<\/TITLE>/i and 
-                $row =~ /<TITLE>(.*)\((.*)\)<\/TITLE>/i) {
+            ## if a spell entry
+            if ($row =~ /<TITLE>(.*)--\s+(\d)[a-z]+? Level (\w+) (.*)(\(.*\))<\/TITLE>/i) {
                 $name = trim($1);
-                #$name = findNewName("~".$name); ## make sure name is new
+                my $this_level = trim($2);
+                my $this_class = trim($3);
+                $name = "$name, $this_class Spell Level $this_level";
+                $source = trim($5);
+                $foundtitle = 1;
+                print "\n** FOUND SPELL PAGE, $1 in $5\n";
+            } ## if
+            ## anything but spell entries
+            elsif ($row =~ /<TITLE>(.*)\((.*)\)<\/TITLE>/i) {
+                $name = trim($1);
                 $source = trim($2);
                 $foundtitle = 1;
                 print "\n** FOUND PAGE, $1 in $2\n";
             } ## if
+            
 
             $row =~ s/^<p><\/p> <\/b>//gi;
             $row =~ s/\<p [^>]+?\>/<p>/gi;
@@ -198,20 +208,6 @@ print "-------->>>>source: $source, record: $this_record\n";
 		print "\n\nTotal html files accepted = $counter_html\n";
 		#print Dumper(%mytree);
 } # end process files        
-
-sub findNewName {
-    my ($name) = @_;
-    
-    foreach my $key (keys %mytree) {
-        if ($mytree{$key}{$name}->{'description'} != "") {
-            print "RAN INTO DUPLICENAME: $name\n.";
-            $name = findNewName("~".$name);
-            last;
-        }
-    }
-    
-    return $name;
-}
 
 
 sub cleanup_Description {
@@ -365,7 +361,7 @@ sub find_OutOfPlaceMarkup {
     $this_string =~ tr{\n}{ }; #eol
     $this_string =~ tr{\r}{ }; #return
     $this_string =~ s/<p>(\s+)?<p>/<p>/gi;
-    
+    $this_string =~ s/<p>(\s+)?<\/p>(\s+)?<p>(\s+)?<\/p>/<p><\/p>/gi;
     if ($this_string =~ /<body>(.*)<\/body>/i) {
         $this_string = $1;
     }
