@@ -54,6 +54,7 @@ my $counter_html = 0;
 	print "Files:\n";
 	@files = sort @files;
 	foreach my $filename (@files) {
+    if (length($filename) > 2) {
 		print "opening $filepath/$filename\n";
         ## strip off trailing .ext
         (my $this_record = $filename) =~ s/\.[^.]+$//;
@@ -192,6 +193,7 @@ print "-------->>>>source: $source, record: $this_record\n";
 		# reset to not
 		$foundtitle = 0;
         ## on to next file
+      }# file length check, windows thing for . and ..
 	} # end while for files()
 
 		foreach my $item_source (sort keys %mytree) {
