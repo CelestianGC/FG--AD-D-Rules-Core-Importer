@@ -38,13 +38,15 @@ After the import has run you will see a PHB.client.xml file. This file is the sk
 
 We'll assume you use modules/PHB, then you need to create a file called "definition.xml" within that directory. The contents should look something like this:
 
-\<?xml version="1.0" encoding="iso-8859-1"?\>
-\<root version="3.3" release="8|CoreRPG:3"\>
-	\<name\>AD&#38;D 2e Players Handbook Reference\</name\>
-	\<category\>2e\</category\>
-	\<author\>version 1.2\</author\>
-	\<ruleset\>AD&#38;D Core\</ruleset\>
-\</root\>
+```
+<?xml version="1.0" encoding="iso-8859-1"?>
+<root version="3.3" release="8|CoreRPG:3">
+	<name>AD&#38;D 2e Players Handbook Reference</name>
+	<category>2e\</category>
+	<author>version 1.2</author>
+	<ruleset>AD&#38;D Core</ruleset>
+</root>
+```
 
 Now place the "PHB.client.xml" file into the same directory and rename it to "client.xml".
 
