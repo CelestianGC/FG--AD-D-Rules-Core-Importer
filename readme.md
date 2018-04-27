@@ -25,6 +25,36 @@ This would take the PHB entries and convert them to a XML file that you can then
 
 ==== How to Import data ====
 
+===== Ref-Manual ======
+This method uses the books/refmanual feature in FG.
+
+
+
+Exit Fantasy Grounds, close it.
+
+After the import has run you will see a PHB.client.xml file. This file is the skeleton ref-manual file. To use this you need to create a new directory under "modules/". 
+
+(In this example "PHB.client.xml" is what we use. However the same options work for DMG.client.xml or anything else. Just tweak the text in the definition.xml file ("2e Players Handbook Reference" and change it to "2e DMG" or whatever you like) and the name of the module directory.)
+
+We'll assume you use modules/PHB, then you need to create a file called "definition.xml" within that directory. The contents should look something like this:
+
+\<?xml version="1.0" encoding="iso-8859-1"?\>
+\<root version="3.3" release="8|CoreRPG:3"\>
+	\<name\>AD&#38;D 2e Players Handbook Reference\</name\>
+	\<category\>2e\</category\>
+	\<author\>version 1.2\</author\>
+	\<ruleset\>AD&#38;D Core\</ruleset\>
+\</root\>
+
+Now place the "PHB.client.xml" file into the same directory and rename it to "client.xml".
+
+You can also find a image that looks like the cover of the book you are using and place it into this directory called "thumbnail.png".
+
+Once you have done the above, start up Fantasy Grounds and in your Library/Modules look for "AD&D 2e Players Handbook Reference" and "load" it. Now you can see it in your library and can browse it. More than likely you will want to go in a rework some of the ordering/errors from the import. You'll need to either do that on the ref-manual file (client.xml) or fix the html files and re-run the import and replace the client.xml file with the new one. I noticed particularly that the Paladin's Handbook didn't have chapters labeled properly and fixing it in the .html file was better method to correct. Other than that more trouble shooting on this is outside the scope of this document.
+
+===== Story Entries ======
+This method places the content imported into "Story" entries. (If you have a choice, ref-manuals tend to be better).
+
 To import the xml file into FG...
 
 * Create a new campaign. 
@@ -44,6 +74,8 @@ To import the xml file into FG...
 HTML files for the DMG will also cause the *_items.xml to be created. These are magic items it found.
 
 HTML files for the PHB will also cause the *_skills.xml to be created. These are skills the script found.
+
+Both the *_items.xml and _skills.xml files are similar to the others. To add them copy/paste the contents into the campaign file "db.xml" within <skills> or <item> xml blocks.
 
 More documentation to follow.
 
