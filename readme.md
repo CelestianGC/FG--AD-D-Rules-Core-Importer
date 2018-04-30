@@ -48,7 +48,31 @@ We'll assume you use modules/PHB, then you need to create a file called "definit
 </root>
 ```
 
-Now place the "PHB.client.xml" file into the same directory and rename it to "client.xml".
+Create "client.xml" and place the contents on PHB.client.xml in the location indicated below
+
+```
+<?xml version="1.0" encoding="iso-8859-1"?>
+<root version="3.3" release="8|CoreRPG:3">
+	<library>
+		<adnd_refmanual_library>
+			<categoryname type="string">2e</categoryname>
+			<entries>
+				<id-00001>
+					<librarylink type="windowreference">
+						<class>reference_manual</class>
+						<recordname>reference.refmanualindex</recordname>
+					</librarylink>
+					<name type="string">PHB Stuff....</name>
+				</id-00001>
+			</entries>
+			<name type="string">Name-Ref-Manual-PlaceHolder-Text</name>
+		</adnd_refmanual_library>
+	</library>
+  
+  ....................PASTE ALL CONTENTS OF XML FILE HERE.............................
+
+</root>  
+```
 
 You can also find a image that looks like the cover of the book you are using and place it into this directory called "thumbnail.png".
 
@@ -73,9 +97,9 @@ To import the xml file into FG...
 * Start the campaign again and look in your "Story" selection.
 * I export that into a module (/export and select Story) and then use the module in other campaigns. Keep this one for just updating the module.  
 
-HTML files for the DMG will also cause the *_items.xml to be created. These are magic items it found.
+HTML files will also sometimes produce the *_items.xml to be created. These are magic items it found.
 
-HTML files for the PHB will also cause the *_skills.xml to be created. These are skills the script found.
+HTML files will also sometimes produce  the *_skills.xml to be created. These are skills the script found.
 
 Both the *_items.xml and _skills.xml files are similar to the others. To add them copy/paste the contents into the campaign file "db.xml" within <skills> or <item> xml blocks.
 
