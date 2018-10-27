@@ -611,6 +611,9 @@ sub as_xml {
                             UNSAFE => 'true' );
 
  my $this_id = 0;
+ my $has_catagory = 0;
+ my $catagory_topic_id = 0;
+  my $this_catagory_id_string = "";
  
  $wr->startTag('encounter');
  foreach my $this_source (sort keys %mytree) {
@@ -620,15 +623,30 @@ sub as_xml {
  {
   
   if ($this_name) { 
+  if ($has_catagory == 0 or $this_name =~ /chap|intro|credits|foreward|appendix|index|welcome|table of content/i) { 
+    ## make a <category name="Chapter 1" baseicon="0" decalicon="0">
+    ## </category>
+    $wr->endTag('category') if $has_catagory != 0;
+    $has_catagory++;
+    $catagory_topic_id = 0;
+    $this_catagory_id_string = sprintf("%05d", $has_catagory);
+    $wr->startTag('category', name => $this_catagory_id_string." ".$this_name, baseicon => "0", decalicon => "0",);
+    ## don't forget to close it.
+   }
    $this_id++;
    my $this_id_string = sprintf("id-%05d", $this_id);
+
    $wr->startTag( $this_id_string );
 
    print " (STORY) Importing source:$this_source record:$this_record name:$this_name (ID:$this_id_string).\n";
 
+   $catagory_topic_id++;
+   my $this_catagory_topic_id_string = sprintf("%05d", $catagory_topic_id);
+   
+   ##
    ##<name type="string">NameTEXT</name>
    $wr->startTag('name', type => "string" );
-   $wr->raw( my_Escape($this_name) );
+   $wr->raw( $this_catagory_id_string.".".$this_catagory_topic_id_string." ".my_Escape($this_name) );
    $wr->endTag('name');
    
    
@@ -657,6 +675,10 @@ sub as_xml {
 	} ## end foreach
     } ## end foreach record
  } ## end foreach sp_class
+ 
+ ## end category
+ $wr->endTag('category');
+ 
  $wr->endTag( 'encounter' );
 
  $wr->end();
