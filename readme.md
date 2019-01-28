@@ -26,6 +26,7 @@ This would take the PHB entries and convert them to a XML file that you can then
 ==== How to Import data ====
 
 ===== Ref-Manual ======
+
 This method uses the books/refmanual feature in FG.
 
 
@@ -79,6 +80,7 @@ You can also find a image that looks like the cover of the book you are using an
 Once you have done the above, start up Fantasy Grounds and in your Library/Modules look for "AD&D 2e Players Handbook Reference" and "load" it. Now you can see it in your library and can browse it. More than likely you will want to go in a rework some of the ordering/errors from the import. You'll need to either do that on the ref-manual file (client.xml) or fix the html files and re-run the import and replace the client.xml file with the new one. I noticed particularly that the Paladin's Handbook didn't have chapters labeled properly and fixing it in the .html file was better method to correct. Other than that more trouble shooting on this is outside the scope of this document.
 
 ===== Story Entries ======
+
 This method places the content imported into "Story" entries. (If you have a choice, ref-manuals tend to be better).
 
 To import the xml file into FG...
@@ -123,6 +125,7 @@ Note that most of the "Discarding" messages you see when importing the PHB and T
 * This will allow you to import your Corerules CD files into a "Spells" format that Fantasy Grounds can use. The best way to import ALL spells is to just copy all the html files into one directory and then point the import tool to that directory. I placed the copied all the files in PHB/* and TM/* into "all/" and then imported all those files into a single XML file.
 
 ==== Command/Examples ====
+
 ./corebook-spells.pl spells/all spells
 
 ==== How to Import Spell data into Fantasy Grounds ===
