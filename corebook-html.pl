@@ -295,9 +295,9 @@ sub cleanup_Description {
     $this_string =~ s/\\x92/'/gi;
     $this_string =~ s/\\x93/'/gi;
     $this_string =~ s/\\x94/'/gi;
-    $this_string =~ s/\\x95//gi;
-    $this_string =~ s/\\x96//gi;
-    $this_string =~ s/\\x97//gi;
+    $this_string =~ s/\\x95/\./gi;
+    $this_string =~ s/\\x96/-/gi;
+    $this_string =~ s/\\x97/-/gi;
     $this_string =~ s/\\xD7/x/gi;
     $this_string =~ s/\\x..//gi;
 
@@ -386,9 +386,9 @@ sub my_Escape {
 		  $this_string =~ s/\\x92/'/gi;
 		  $this_string =~ s/\\x93/'/gi;
 		  $this_string =~ s/\\x94/'/gi;
-		  $this_string =~ s/\\x95//gi;
-		  $this_string =~ s/\\x96//gi;
-		  $this_string =~ s/\\x97//gi;
+      $this_string =~ s/\\x95/\./gi;
+      $this_string =~ s/\\x96/-/gi;
+      $this_string =~ s/\\x97/-/gi;
 		  $this_string =~ s/\\xD7/x/gi;
 		  $this_string =~ s/\\x..//gi;
 
